@@ -12,6 +12,8 @@ cookpath = 'resource\\cookies.json'
 jwc = None
 index = 0
 
+# 打包语句：
+# >pyinstaller -w main.py jiaowuchu.py print_tool.py zhlg.py -i D:\mixed_file\daima\Python\mypro\resource\icon.ico
 
 def login(sender, data):
     print('正在登录……')

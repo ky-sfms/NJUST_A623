@@ -1,7 +1,4 @@
 # coding: utf-8
-# Author: KuangYu
-# Website: ChanJH <chanjh.com>, SunsetYe <github.com/sunsetye66>
-# Contact: SunsetYe <me # sunsetye.com>
 
 import json
 import sys
@@ -9,6 +6,8 @@ from datetime import datetime, timedelta
 from uuid import uuid4 as uid
 import socket
 
+
+# 安卓手机只能提前提醒10分钟，需要手动修改。
 
 class GenerateCal:
     def __init__(self, rl):
