@@ -1,12 +1,11 @@
 from bs4 import BeautifulSoup
 from dearpygui.core import *
 from dearpygui.simple import *
-import os
 import requests
 import time
 import re
 import execjs
-
+from requests import utils
 
 # todo 报平安
 def hand_timestamp():
@@ -47,44 +46,49 @@ para_book = {
 
 
 class zhlg:
-    def __init__(self, username, password):
+    def __init__(self, username, password, cookie):
         self.islogin = False
         self.s = requests.session()
         self.s.headers = header
         self.info = []
-        re1 = self.s.get(url_login, params=para1)
-        text = self.hand_text(re1)
-        soup = BeautifulSoup(text, 'html.parser')
-        data_list = []  # 登录 寻找完毕
-        a1 = soup.find('input', id='pwdDefaultEncryptSalt')
-        a2 = soup.findAll(name='input')
-        data_list.append(self.hand_value(str(a1)))
-        for x in a2:
-            try:
-                if x['name'] == 'lt':
-                    data_list.append(self.hand_value(str(x)))
-                    continue
-                if x['name'] == 'execution':
-                    data_list.append(self.hand_value(str(x)))
-                    break
-            except:
-                pass
-        fun = self.encode_js()
-        data_list[0] = fun.call('myencode', password, data_list[0])
-        data2 = {
-            'username': username,
-            'password': data_list[0],
-            'lt': data_list[1],
-            'dllt': 'userNamePasswordLogin',
-            'execution': data_list[2],
-            '_eventId': 'submit',
-            'rmShown': '1'
-        }
-        # 第一个login完毕
-        re2 = self.s.post(url_login, params=para1, data=data2)
-        if re2.url == 'http://ehall.njust.edu.cn/new/index.html':
-            self.islogin = True
+        if cookie is None:
+            re1 = self.s.get(url_login, params=para1)
+            text = self.hand_text(re1)
+            soup = BeautifulSoup(text, 'html.parser')
+            data_list = []  # 登录 寻找完毕
+            a1 = soup.find('input', id='pwdDefaultEncryptSalt')
+            a2 = soup.findAll(name='input')
+            data_list.append(self.hand_value(str(a1)))
+            for x in a2:
+                try:
+                    if x['name'] == 'lt':
+                        data_list.append(self.hand_value(str(x)))
+                        continue
+                    if x['name'] == 'execution':
+                        data_list.append(self.hand_value(str(x)))
+                        break
+                except:
+                    pass
+            fun = self.encode_js()
+            data_list[0] = fun.call('myencode', password, data_list[0])
+            data2 = {
+                'username': username,
+                'password': data_list[0],
+                'lt': data_list[1],
+                'dllt': 'userNamePasswordLogin',
+                'execution': data_list[2],
+                '_eventId': 'submit',
+                'rmShown': '1'
+            }
+            # 第一个login完毕
+            self.s.post(url_login, params=para1, data=data2)
+        else:
+            self.s.cookies = utils.cookiejar_from_dict(cookie, cookiejar=None, overwrite=True)
         re_card = self.s.get(url_getdata, headers=header, params=para_card)
+        if type(re_card.json()) is list:
+            self.islogin = True
+        else:
+            return
         re_netyue = self.s.get(url_getdata, headers=header, params=para_netyue)
         re_book = self.s.get(url_getdata, headers=header, params=para_book)
         self.handle_info(re_card)

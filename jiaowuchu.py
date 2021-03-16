@@ -8,18 +8,31 @@ import requests
 import json
 import time
 import re
-from tkinter import messagebox
-import tkinter as tk
+
+from main import mesbox
 
 pic_fpath = "resource\\picf.png"
 url_1 = 'http://202.119.81.113:8080'
 url_2 = "http://202.119.81.113:8080/Logon.do?method=logon"
 url_3 = "http://202.119.81.112:9080"
 heard1 = {
+
     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) '
                   'Chrome/87.0.4280.141 Safari/537.36 Edg/87.0.664.75 '
 }
-
+heard2 = {
+    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,'
+              'application/signed-exchange;v=b3;q=0.9',
+    'Accept-Encoding': 'gzip, deflate',
+    'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6',
+    'Cache-Control': 'no-cache',
+    'Connection': 'keep-alive',
+    'Origin': 'http://202.119.81.113:8080',
+    'Referer': 'http://202.119.81.113:8080/',
+    'Upgrade-Insecure-Requests': '1',
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) '
+                  'Chrome/89.0.4389.90 Safari/537.36 Edg/89.0.774.54 '
+}
 
 def sel_title(x):
     return x.split("title")[1]
@@ -67,7 +80,7 @@ class jwc:
             f.write(r.content)
             f.close()
             self.keys = self.read_text()
-            rr = self.s.post(url=url_2, headers=heard1, data={
+            rr = self.s.post(url=url_2, headers=heard2, data={
                 'USERNAME': self.username,
                 'PASSWORD': self.keywords,
                 'useDogCode': '',
@@ -84,6 +97,7 @@ class jwc:
                 break
             else:
                 time.sleep(2)
+
 
     def read_text(self) -> object:
         # 验证码图片转字符串
@@ -370,9 +384,7 @@ class kc:
         process = GenerateCal(self.rili)
         process.set_attribute(data)
         process.main_process()
-        root = tk.Tk()
-        root.withdraw()
-        messagebox.showinfo("提示", "生成.ics文件成功")
+        mesbox("提示", "生成.ics文件成功", -1)
 
 
 class cj:
