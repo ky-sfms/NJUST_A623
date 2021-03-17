@@ -9,6 +9,8 @@ import json
 import time
 import re
 
+from requests import utils
+
 from main import mesbox
 
 pic_fpath = "resource\\picf.png"
@@ -33,6 +35,7 @@ heard2 = {
     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) '
                   'Chrome/89.0.4389.90 Safari/537.36 Edg/89.0.774.54 '
 }
+
 
 def sel_title(x):
     return x.split("title")[1]
@@ -70,22 +73,46 @@ class jwc:
     rr = None
     islogin = False
 
-    def __init__(self, username, keywords):
+    def __init__(self, username, keywords, cookie):
         self.username = username
         self.keywords = keywords
         self.s = requests.session()
-        for i in range(0, 10):
-            r = self.s.get(url_1 + '/verifycode.servlet', headers=heard1)
-            f = open(pic_fpath, 'wb')
-            f.write(r.content)
-            f.close()
-            self.keys = self.read_text()
-            rr = self.s.post(url=url_2, headers=heard2, data={
-                'USERNAME': self.username,
-                'PASSWORD': self.keywords,
-                'useDogCode': '',
-                'RANDOMCODE': self.keys
-            })
+        self.ck = None
+        if cookie is None:
+            for i in range(0, 10):
+                r = self.s.get(url_1 + '/verifycode.servlet', headers=heard1)
+                f = open(pic_fpath, 'wb')
+                f.write(r.content)
+                f.close()
+                cookie1 = self.s.cookies
+                self.keys = self.read_text()
+                rr = self.s.post(url=url_2, headers=heard2, data={
+                    'USERNAME': self.username,
+                    'PASSWORD': self.keywords,
+                    'useDogCode': '',
+                    'RANDOMCODE': self.keys
+                })
+                if '学生个人中心' in rr.text.split('title')[1]:
+                    set_main_window_size(900, 1200)
+                    # delete_item('loginwin', children_only=True)
+                    for x in get_item_children('loginwin'):
+                        if x != 'menu_bar':
+                            delete_item(x)
+                    set_window_pos('loginwin', 0, 0)
+                    add_tab_bar('bar', parent='loginwin')
+                    end()
+                    self.rr = rr
+                    self.findhref()
+                    self.islogin = True
+                    if cookie1 != self.s.cookies:
+                        self.ck = self.s.cookies.get_dict()
+                    break
+                else:
+                    time.sleep(2)
+                    print('正在尝试登录')
+        else:
+            self.s.cookies = utils.cookiejar_from_dict(cookie, cookiejar=None, overwrite=True)
+            rr = self.s.get('http://202.119.81.112:9080/njlgdx/framework/main.jsp', headers=heard2)
             if '学生个人中心' in rr.text.split('title')[1]:
                 set_main_window_size(900, 1200)
                 delete_item('loginwin', children_only=True)
@@ -94,10 +121,6 @@ class jwc:
                 self.rr = rr
                 self.findhref()
                 self.islogin = True
-                break
-            else:
-                time.sleep(2)
-
 
     def read_text(self) -> object:
         # 验证码图片转字符串
@@ -306,10 +329,16 @@ class kc:
         add_text(re.text + ':' + self.xkkc[index][0] + ' ' + self.xkkc[index][1] + ' ' + self.xkkc[index][2],
                  parent='tab3')
 
+    # 写入日历文件
+
     def paint(self):
 
         with tab('tab3', label='选课', parent='bar'):  # 课程名 老师 时间 编号 学分 代号 学时 周次 地点 0 1 2 8 7 4
-            if self.xkkc is not None:
+            add_input_text('first', default_value='20210308', label='本学期第一周第一天')
+            add_input_text('pre', default_value='30', label='提前提醒时间')
+            add_button('print', label='课表生成日历', callback=self.printf,
+                       callback_data=[get_value('first'), get_value('pre')])
+            if self.xkkc is not None and len(self.xkkc) > 0:
                 add_text('选课表')
                 add_table('选课表_table', ['课程名', '老师', '时间', '地点', '周次', '学分'], width=1380, height=450)
                 for x in self.xkkc:
@@ -319,10 +348,6 @@ class kc:
                 add_table('课表_table', ['课程名', '老师', '时间', '地点', '周次', '学分'], width=1380, height=450)
                 for x in self.yxkx:
                     add_row('课表_table', [x[0], x[1], x[2], x[8], x[7], x[4]])
-        add_input_text('first', default_value='20210308', label='本学期第一周第一天', parent='loginwin', before='bar')
-        add_input_text('pre', default_value='30', label='提前提醒时间', parent='loginwin', before='bar')
-        add_button('print', label='课表生成日历', callback=self.printf, callback_data=[get_value('first'), get_value('pre')],
-                   parent='loginwin', before='bar')
 
     def write_rili(self):
         self.rili = []
@@ -337,6 +362,9 @@ class kc:
                     weeks = 1
                 s = a1[0]
                 e = a1[len(a1) - 1]
+            elif len(a2) == 1:
+                s = a2[0]
+                e = a2[0]
             else:
                 s = a2[0]
                 e = a2[1]
@@ -378,13 +406,15 @@ class kc:
         d["isClassTeacherEnabled"] = self.yxkx[i][1]
         self.rili.append(d)
 
+    # 生成日历文件
+
     def printf(self, sender, data):
         self.write_rili()
         from print_tool import GenerateCal
         process = GenerateCal(self.rili)
         process.set_attribute(data)
         process.main_process()
-        mesbox("提示", "生成.ics文件成功", -1)
+        mesbox("成功", "生成.ics文件成功", -1)
 
 
 class cj:
@@ -393,6 +423,8 @@ class cj:
     list_cj = []
 
     def __init__(self, s: object) -> object:
+        self.sumxf = []
+        self.list_n = []  # 用于计算的成绩序号
         self.rr = s.get(url=self.url, headers=heard1)
         soup = BeautifulSoup(replace_luoma(self.rr.text, 0), 'html.parser')
         list1 = soup.find('table', class_='Nsb_r_list Nsb_table')
@@ -456,62 +488,102 @@ class cj:
     def toavg(self, list1):
         fs = []
         jd = []
-        sumxf = []
         xq = []
         fs.append(0.0)
         jd.append(0.0)
-        sumxf.append(0.0)
-        xq.append(self.list_cj[1][1])
+        self.sumxf.clear()
+        self.sumxf.append(0.0)  # 学期总学分
+        xq.append(int(self.list_cj[list1[0]][0]))
         for i in list1:
-            if self.list_cj[i][1] != xq[len(xq) - 1]:
+            if self.list_cj[i][1] != self.list_cj[xq[len(xq) - 1]][1]:
                 try:
-                    xq.append(self.list_cj[i][1])
+                    xq.append(int(self.list_cj[i][0]))
                     fs.append(0.0)
                     jd.append(0.0)
-                    sumxf.append(0.0)
+                    self.sumxf.append(0.0)
                     fs[len(xq) - 1] = fs[len(xq) - 1] + self.tofs(self.list_cj[i][4]) * float(self.list_cj[i][6])
                     jd[len(xq) - 1] = jd[len(xq) - 1] + self.tojd(self.list_cj[i][4]) * float(self.list_cj[i][6])
-                    sumxf[len(xq) - 1] = sumxf[len(xq) - 1] + float(self.list_cj[i][6])
+                    self.sumxf[len(xq) - 1] = self.sumxf[len(xq) - 1] + float(self.list_cj[i][6])
                 except:
                     print(self.list_cj[i])
             else:
                 fs[len(xq) - 1] = fs[len(xq) - 1] + self.tofs(self.list_cj[i][4]) * float(self.list_cj[i][6])
                 jd[len(xq) - 1] = jd[len(xq) - 1] + self.tojd(self.list_cj[i][4]) * float(self.list_cj[i][6])
-                sumxf[len(xq) - 1] = sumxf[len(xq) - 1] + float(self.list_cj[i][6])
+                self.sumxf[len(xq) - 1] = self.sumxf[len(xq) - 1] + float(self.list_cj[i][6])
         for i in range(0, len(xq)):
-            fs[i] = round(fs[i] / sumxf[i], 2)
-            jd[i] = round(jd[i] / sumxf[i], 2)
-        return {'jf': fs, 'jj': jd}
+            fs[i] = round(fs[i] / self.sumxf[i], 2)
+            jd[i] = round(jd[i] / self.sumxf[i], 2)
+        set_value(' - > 已选学分', str(self.sumxf).replace('[', '').replace(']', ''))
+        return {'jf': fs, 'jj': jd, 'xq': xq}
 
     def onall(self, sender, data):
-        if get_value('必修') == False:
-            re = self.toavg(data[1])
+        if not get_value('必修'):
+            re = self.toavg(self.list_n[1])
             set_value('1', value=re["jf"])
             set_value('2', value=re["jj"])
         else:
-            re = self.toavg(data[0])
+            re = self.toavg(self.list_n[0])
             set_value('1', value=re["jf"])
             set_value('2', value=re["jj"])
             pass
         return
 
+    def select_item(self, sender, data):
+        self.list_n[1].clear()
+        self.list_n[1] = [x for x in range(1, len(self.list_cj))]
+        j = False
+        for x in range(len(get_table_data(sender))):
+            set_table_item(sender, x, 10, str(True))
+        for x in get_table_selections(sender):
+            if x[1] == 10:
+                j = True
+                set_table_item(sender, x[0], x[1], str(False))
+                self.list_n[1].remove(int(get_table_item(sender, x[0], 0)))
+        if len(get_table_selections(sender)) == 0:
+            j = True
+        if j:
+            self.onall(None, None)
+
+    def main_callback(self, sender, data):
+        x = get_plot_mouse_pos()[0] + 1
+        if x > len(self.list_cj) or x < 1:
+            set_item_tip('plot1', '')
+            return
+        x = int(x)
+        set_item_tip('plot1', self.list_cj[x][3])
+
     def paint(self):
-        # 序号 开学学期 课程编号 课程名称 成绩 成绩标识 学分 总学时 考核方式 课程属性 课程性质
-        # 0    1      2       3      4   5       6   7     8       9      10
+        # 序号 开学学期 课程编号 课程名称 成绩 成绩标识 学分 总学时 考核方式 课程属性 课程性质 是否选中
+        # 0    1      2       3      4   5 （删除）      6   7     8       9      10      11
         with tab('tab2', label="考试成绩", parent='bar'):
-            add_table("成绩查询", self.list_cj[0], width=1080, height=450)
-            list_n = []
-            list_n.append([])
-            list_n.append(range(1, len(self.list_cj)))
-            for i in range(1, len(self.list_cj)):
-                add_row("成绩查询", self.list_cj[i])
-                if self.list_cj[i][9] == '必修':
-                    list_n[0].append(i)
-            re1 = self.toavg(list_n[1])
-            delete_column('成绩查询', 5)
+            self.list_n.append([])
+            self.list_n.append([x for x in range(1, len(self.list_cj))])
+            re1 = self.toavg(self.list_n[1])
+            data_fs = []
+            for x in re1['xq']:
+                table_name = "{} 成绩查询".format(x)
+                add_table(table_name, self.list_cj[0], callback=self.select_item)
+                endi = len(self.list_cj)
+                for i in range(x, len(self.list_cj)):
+                    if self.list_cj[i][1] != self.list_cj[x][1]:
+                        endi = i
+                        break
+                    add_row(table_name, self.list_cj[i])
+                    data_fs.append(self.tofs(self.list_cj[i][4]))
+                    if self.list_cj[i][9] == '必修':
+                        self.list_n[0].append(i)
+                add_column(table_name, '是否选中', [str(True) for y in range(endi - x)])
+                delete_column(table_name, 5)
+            add_checkbox('必修', callback=self.onall)
+            add_label_text(' - > 已选学分', default_value=str(self.sumxf).replace('[', '').replace(']', ''))
+            add_plot('plot1', width=1080, height=400, label="成绩分布")
+            add_line_series("plot1", name="成绩折线图", x=[x for x in range(1, len(self.list_cj))], y=data_fs,
+                            color=[255, 0, 0, 255])
+            add_scatter_series("plot1", name="成绩散点图", x=[x for x in range(1, len(self.list_cj))], y=data_fs,
+                               outline=[255, 255, 0, 255], fill=[255, 255, 255, 100])
             add_simple_plot('1', value=re1["jf"], label='均分', height=100, width=1080)
             add_simple_plot('2', value=re1["jj"], label='均绩', height=100, width=1080)
-            add_checkbox('必修', callback=self.onall, callback_data=list_n)
+            set_mouse_move_callback(self.main_callback)  # 设置鼠标移动监听
 
 
 class djcj:
