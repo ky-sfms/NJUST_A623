@@ -100,9 +100,7 @@ def login(sender, data):
         return
     # 已经登录成功
     set_main_window_size(1920, 1080)  # 全屏
-    # 课程
-    kc = jiaowuchu.kc(jwc.s, jwc.list['选课中心'])
-    kc.paint()
+    jwc.paint()
     # 考试
     cj = jiaowuchu.cj(jwc.s)
     cj.paint()
@@ -154,6 +152,8 @@ if __name__ == '__main__':
     set_main_window_title('NJUST')
     set_main_window_size(400, 200)
     set_main_window_pos(550, 300)
+
+    add_additional_font('C:/Windows/Fonts/SIMHEI.TTF', 16, glyph_ranges='chinese_full')
     with window('loginwin', x_pos=0, y_pos=0, no_move=True, autosize=True, no_title_bar=True,
                 no_scrollbar=True):
         add_additional_font('C:/Windows/Fonts/SIMHEI.TTF', 16, glyph_ranges='chinese_full')
