@@ -29,6 +29,8 @@ class GenerateCal:
         self.class_info = rl
 
     def set_attribute(self, data):
+        print('data')
+        print(data)
         self.first_week = data[0]
         self.inform_time = data[1]
         try:

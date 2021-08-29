@@ -15,7 +15,7 @@ index = 0
 
 
 # 打包语句：
-# >pyinstaller -w main.py jiaowuchu.py print_tool.py zhlg.py -i D:\mixed_file\daima\Python\mypro\resource\icon.ico
+# pyinstaller -w main.py jiaowuchu.py print_tool.py zhlg.py -i D:\mixed_file\daima\Python\mypro\resource\icon.ico
 
 def mesbox(title, text, interval):
     size_main = get_main_window_size()

@@ -385,7 +385,7 @@ class kc:
         else:
             print('tab3无子类')
         with tab('tab3', label='选课', parent='bar'):  # 课程名 老师 时间 编号 学分 代号 学时 周次 地点 0 1 2 8 7 4
-            add_input_text('first', default_value='20210308', label='本学期第一周第一天')
+            add_input_text('first', default_value='20210823', label='本学期第一周第一天', )
             add_input_text('pre', default_value='30', label='提前提醒时间')
             add_button('print', label='课表生成日历', callback=self.printf,
                        callback_data=[get_value('first'), get_value('pre')])
@@ -417,15 +417,26 @@ class kc:
         self.rili = []
         for i in range(0, len(self.yxkc)):
             weeks = 0
+            isGuoQing = False
             a1 = self.yxkc[i][7].split(',')
             a2 = self.yxkc[i][7].split('-')
             if len(a1) > 1:
-                if int(a1[0]) % 2 == 0:
+                if len(a2) > 1:
+                    l = a1[0].split('-')
+                    s = l[0]
+                    e = l[1]
+                    l = a1[1].split('-')
+                    ss = l[0]
+                    ee = l[1]
+                    isGuoQing = True
+                elif int(a1[0]) % 2 == 0:
                     weeks = 2
+                    s = a1[0]
+                    e = a1[len(a1) - 1]
                 else:
                     weeks = 1
-                s = a1[0]
-                e = a1[len(a1) - 1]
+                    s = a1[0]
+                    e = a1[len(a1) - 1]
             elif len(a2) == 1:
                 s = a2[0]
                 e = a2[0]
@@ -440,7 +451,6 @@ class kc:
             for x in result:
                 a = str(x[0]).strip()
                 b = str(x[1]).strip()
-
                 if a == "星期一":
                     weekday = 1
                 elif a == "星期二":
@@ -455,7 +465,10 @@ class kc:
                     weekday = 6
                 else:
                     weekday = 7
+
                 self.w(i, s, e, weeks, weekday, b)
+                if isGuoQing:
+                    self.w(i, ss, ee, weeks, weekday, b)
 
     def w(self, i, s, e, weeks, weekday, classtime):
         d = {}
@@ -476,7 +489,7 @@ class kc:
         self.write_rili()
         from print_tool import GenerateCal
         process = GenerateCal(self.rili)
-        process.set_attribute(data)
+        process.set_attribute([get_value('first'), get_value('pre')])
         process.main_process()
         # mesbox("成功", "生成.ics文件成功", -1)
 
